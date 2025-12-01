@@ -1,13 +1,13 @@
 import axios from 'axios';
 
-// Cliente para AUTH (Puerto 3001)
+// Cliente para AUTH (Usa la URL de tu primer servicio de Render)
 export const authApi = axios.create({
-  baseURL: 'http://localhost:3001',
+  baseURL: 'https://sistema-auth.onrender.com', 
 });
 
-// Cliente para CORE/Inventario/Ventas (Puerto 3002)
+// Cliente para CORE (Usa la URL de tu segundo servicio de Render)
 export const coreApi = axios.create({
-    baseURL: 'http://localhost:3002',
+    baseURL: 'https://sistema-core.onrender.com',
 });
 
 // Interceptor: Antes de cada petición al CORE, inyectar el Token si existe
