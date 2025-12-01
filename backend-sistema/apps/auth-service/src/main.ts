@@ -1,8 +1,10 @@
 import { NestFactory } from '@nestjs/core';
-import { AuthServiceModule } from './auth-service.module';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AuthServiceModule);
-  await app.listen(process.env.port ?? 3000);
+  const app = await NestFactory.create(AppModule);
+  app.enableCors(); // <--- Habilita CORS
+  await app.listen(3001); // <--- Cambia el puerto a 3001
+  console.log(`Auth Service corriendo en: ${await app.getUrl()}`);
 }
 bootstrap();
