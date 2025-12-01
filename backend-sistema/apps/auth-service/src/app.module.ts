@@ -9,13 +9,13 @@ import { User } from './auth/user.entity';
     // Conexión a Base de Datos MySQL
     TypeOrmModule.forRoot({
       type: 'mysql',
-      host: 'localhost',
-      port: 3306,
-      username: 'root',      // Tu usuario de MySQL (generalmente root)
-      password: 'root',          // Tu contraseña de MySQL (si usas XAMPP suele ser vacía)
-      database: 'auth_db',   // ¡Asegúrate de crear esta DB en tu MySQL primero!
+      host: 'switchyard.proxy.rlwy.net',  // Copiado de tu imagen
+      port: 48207,                        // Copiado de tu imagen
+      username: 'root',                   // Copiado de tu imagen
+      password: 'krJTYAegsJHoemOQMVPAsNJtemMpAccj', // <--- Dale a "Show" y pégala aquí
+      database: 'railway',                // Copiado de tu imagen
       entities: [User],
-      synchronize: true,     // Crea las tablas automáticamente
+      synchronize: true,    
     }),
     AuthModule,
   ],
