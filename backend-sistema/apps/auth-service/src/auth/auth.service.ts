@@ -42,4 +42,7 @@ export class AuthService {
       throw new UnauthorizedException('Credenciales inválidas');
     }
   }
+  async borrarUsuario(email: string) {
+    return this.usersRepository.delete({ email });
+  }
 }
