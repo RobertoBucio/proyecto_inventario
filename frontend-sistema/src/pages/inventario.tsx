@@ -31,6 +31,8 @@ export const Inventario = () => {
       // 2. Se lo agregamos a los datos del producto
       await coreApi.post('/inventory', { 
         ...nuevoProducto, 
+        precio: Number(nuevoProducto.precio), // <--- ESTO ES CLAVE
+        stock: Number(nuevoProducto.stock),   // <--- ESTO TAMBIÉN
         usuarioEmail: emailDueño 
       });
 
