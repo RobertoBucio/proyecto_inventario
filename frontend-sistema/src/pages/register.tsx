@@ -11,13 +11,26 @@ export const Register = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(''); // Limpiamos errores previos
+
     try {
-      // Usamos la misma ruta que usábamos en Thunder Client
+      // 1. Enviamos los datos para CREAR el usuario
       await authApi.post('/auth/register', { email, password });
-      alert('Usuario creado con éxito. Ahora puedes iniciar sesión.');
-      navigate('/login');
+
+      // 2. Inmediatamente hacemos LOGIN automático con esos mismos datos
+      const loginResponse = await authApi.post('/auth/login', { email, password });
+
+      // 3. Guardamos el token y el email (igual que hacíamos en el Login)
+      localStorage.setItem('token', loginResponse.data.access_token);
+      localStorage.setItem('userEmail', email);
+
+      // 4. Redirigimos directo al Dashboard (sin pasar por Login)
+      alert('¡Cuenta creada! Bienvenido.');
+      navigate('/dashboard');
+
     } catch (err: any) {
-      setError('Error al registrar. Puede que el correo ya exista.');
+      console.error(err);
+      setError('Error al registrar. Verifica si el correo ya existe.');
     }
   };
 

@@ -13,8 +13,8 @@ export const Inventario = () => {
 
   const cargarProductos = async () => {
     try {
-      // En cargarProductos:
       const email = localStorage.getItem('userEmail');
+      // Enviamos el email como parámetro en la URL
       const res = await coreApi.get(`/inventory?email=${email}`);
       setProductos(res.data);
     } catch (error) {
@@ -25,12 +25,21 @@ export const Inventario = () => {
   const crearProducto = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await coreApi.post('/inventory', nuevoProducto);
-      setNuevoProducto({ nombre: '', precio: 0, stock: 0, categoria: '' }); // Limpiar form
-      cargarProductos(); // Recargar tabla
+      // 1. Recuperamos el email del dueño
+      const emailDueño = localStorage.getItem('userEmail');
+
+      // 2. Se lo agregamos a los datos del producto
+      await coreApi.post('/inventory', { 
+        ...nuevoProducto, 
+        usuarioEmail: emailDueño 
+      });
+
+      setNuevoProducto({ nombre: '', precio: 0, stock: 0, categoria: '' });
+      cargarProductos();
       alert('Producto creado correctamente');
     } catch (error) {
-      alert('Error al crear producto');
+      console.error(error); // Para ver el error en consola si falla
+      alert('Error al crear producto. Verifica que no falten datos.');
     }
   };
 

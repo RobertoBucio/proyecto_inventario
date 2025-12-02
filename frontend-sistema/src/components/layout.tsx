@@ -30,8 +30,9 @@ export const Layout = () => {
     try {
       await authApi.delete('/auth/delete', { data: { email } });
       localStorage.clear();
-      navigate('/login');
+      window.location.href=('/login');
     } catch (error) {
+      console.error(error);
       alert('Error al eliminar cuenta');
     }
   };

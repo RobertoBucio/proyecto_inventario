@@ -42,6 +42,7 @@ function App() {
         <Routes>
            {/* ... Tus rutas siguen igual ... */}
            <Route path="/login" element={<Login />} />
+           <Route path="/register" element={<Register />} />
            <Route path="/dashboard" element={<Layout />}>
              <Route index element={<Navigate to="/dashboard/inventario" replace />} />
              <Route path="inventario" element={<Inventario />} />
