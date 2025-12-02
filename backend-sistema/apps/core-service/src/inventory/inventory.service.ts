@@ -10,12 +10,12 @@ export class InventoryService {
   ) {}
 
   async crearProducto(datos: any) {
-    const nuevo = new this.productModel(datos);
+    const nuevo = new this.productModel(datos); 
     return nuevo.save();
   }
 
-  async listarProductos() {
-    return this.productModel.find().exec();
+  async listarProductos(email: string) {
+    return this.productModel.find({ usuarioEmail: email }).exec();
   }
 
   // Método auxiliar para actualizar stock (lo usaremos en ventas)

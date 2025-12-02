@@ -16,6 +16,9 @@ export class Product {
 
   @Prop()
   categoria: string;
+  
+  @Prop({ required: true })
+  usuarioEmail: string; // <--- AQUÍ GUARDAMOS DE QUIÉN ES EL PRODUCTO
 }
 
 export const ProductSchema = SchemaFactory.createForClass(Product);

@@ -13,7 +13,9 @@ export const Inventario = () => {
 
   const cargarProductos = async () => {
     try {
-      const res = await coreApi.get('/inventory');
+      // En cargarProductos:
+      const email = localStorage.getItem('userEmail');
+      const res = await coreApi.get(`/inventory?email=${email}`);
       setProductos(res.data);
     } catch (error) {
       console.error("Error cargando inventario", error);
@@ -41,16 +43,16 @@ export const Inventario = () => {
         <Typography variant="h6">Agregar Nuevo Producto</Typography>
         <form onSubmit={crearProducto}>
           <Grid container spacing={2}>
-            <Grid item xs={3}>
+            <Grid size={3}>
               <TextField label="Nombre" fullWidth value={nuevoProducto.nombre} onChange={(e) => setNuevoProducto({...nuevoProducto, nombre: e.target.value})} />
             </Grid>
-            <Grid item xs={3}>
+            <Grid size={3}>
               <TextField label="Precio" type="number" fullWidth value={nuevoProducto.precio} onChange={(e) => setNuevoProducto({...nuevoProducto, precio: Number(e.target.value)})} />
             </Grid>
-            <Grid item xs={3}>
+            <Grid size={3}>
               <TextField label="Stock Inicial" type="number" fullWidth value={nuevoProducto.stock} onChange={(e) => setNuevoProducto({...nuevoProducto, stock: Number(e.target.value)})} />
             </Grid>
-            <Grid item xs={3}>
+            <Grid size={3}>
               <Button type="submit" variant="contained" fullWidth sx={{ height: '100%' }}>Guardar</Button>
             </Grid>
           </Grid>

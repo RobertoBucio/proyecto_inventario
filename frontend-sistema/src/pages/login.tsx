@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Box, Button, Container, Paper, TextField, Typography, Alert } from '@mui/material';
 import { authApi } from '../api/axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export const Login = () => {
   const [email, setEmail] = useState('');
@@ -18,6 +18,7 @@ export const Login = () => {
       
       // 2. Guardar el token en el navegador
       localStorage.setItem('token', response.data.access_token);
+      localStorage.setItem('userEmail', email);
       
       // 3. Redirigir al dashboard (crearemos esta ruta después)
       navigate('/dashboard');
@@ -64,6 +65,13 @@ export const Login = () => {
             >
               Entrar
             </Button>
+            <Box textAlign="center" sx={{ mt: 2 }}>
+                <Link to="/register" style={{ textDecoration: 'none' }}>
+                    <Typography variant="body2" color="primary" sx={{ cursor: 'pointer' }}>
+                        ¿No tienes cuenta? Regístrate aquí
+                    </Typography>
+                </Link>
+            </Box>
           </Box>
           {/* Aquí podrías agregar un link a "Registrarse" */}
         </Paper>

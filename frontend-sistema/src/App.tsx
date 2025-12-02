@@ -5,6 +5,7 @@ import { Layout } from './components/layout';
 import { Inventario } from './pages/inventario';
 import { Ventas } from './pages/ventas';
 import { Reportes } from './pages/reportes';
+import { Register } from './pages/register';
 
 // --- CONFIGURACIÓN DE TU ESTILO ---
 const miTema = createTheme({
@@ -46,6 +47,7 @@ function App() {
              <Route path="inventario" element={<Inventario />} />
              <Route path="ventas" element={<Ventas />} />
              <Route path="reportes" element={<Reportes />} />
+             <Route path="register" element={<Register />} />
            </Route>
            <Route path="/" element={<Navigate to="/login" replace />} />
         </Routes>

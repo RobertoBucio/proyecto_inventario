@@ -1,0 +1,54 @@
+import { useState } from 'react';
+import { Box, Button, Container, Paper, TextField, Typography, Alert } from '@mui/material';
+import { authApi } from '../api/axios';
+import { useNavigate, Link } from 'react-router-dom';
+
+export const Register = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      // Usamos la misma ruta que usábamos en Thunder Client
+      await authApi.post('/auth/register', { email, password });
+      alert('Usuario creado con éxito. Ahora puedes iniciar sesión.');
+      navigate('/login');
+    } catch (err: any) {
+      setError('Error al registrar. Puede que el correo ya exista.');
+    }
+  };
+
+  return (
+    <Container maxWidth="xs">
+      <Box sx={{ marginTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <Paper elevation={3} sx={{ padding: 4, width: '100%' }}>
+          <Typography component="h1" variant="h5" align="center" gutterBottom>
+            Crear Nueva Cuenta
+          </Typography>
+          
+          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
+          <Box component="form" onSubmit={handleRegister}>
+            <TextField
+              margin="normal" required fullWidth label="Correo Electrónico"
+              value={email} onChange={(e) => setEmail(e.target.value)}
+            />
+            <TextField
+              margin="normal" required fullWidth label="Contraseña" type="password"
+              value={password} onChange={(e) => setPassword(e.target.value)}
+            />
+            <Button type="submit" fullWidth variant="contained" sx={{ mt: 3, mb: 2 }}>
+              Registrarse
+            </Button>
+            <Link to="/login" style={{ textDecoration: 'none' }}>
+                <Button fullWidth>¿Ya tienes cuenta? Inicia Sesión</Button>
+            </Link>
+          </Box>
+        </Paper>
+      </Box>
+    </Container>
+  );
+};

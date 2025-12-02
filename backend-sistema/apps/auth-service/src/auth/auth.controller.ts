@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Delete } from '@nestjs/common';
 import { AuthService } from './auth.service';
 
 @Controller('auth')
@@ -13,5 +13,9 @@ export class AuthController {
   @Post('login')
   async login(@Body() body: any) {
     return this.authService.login(body);
+  }
+  @Delete('delete') // Ruta: DELETE /auth/delete
+  async deleteAccount(@Body('email') email: string) {
+    return this.authService.borrarUsuario(email);
   }
 }

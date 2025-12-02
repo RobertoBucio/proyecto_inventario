@@ -73,7 +73,7 @@ export const Ventas = () => {
 
       <Grid container spacing={3}>
         {/* Panel Izquierdo: Agregar Productos */}
-        <Grid item xs={12} md={5}>
+        <Grid size={{ xs: 12, md: 5 }}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>Agregar Producto</Typography>
             
@@ -122,7 +122,7 @@ export const Ventas = () => {
         </Grid>
 
         {/* Panel Derecho: El Carrito y Total */}
-        <Grid item xs={12} md={7}>
+        <Grid size={{ xs: 12, md: 7 }}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>Ticket de Venta</Typography>
             <TableContainer>
