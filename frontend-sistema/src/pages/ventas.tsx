@@ -27,9 +27,9 @@ const Ventas = () => {
         const respuesta = await coreApi.get('/inventory');
         
         // AQUÍ ESTÁ EL TRUCO: Filtramos para ver solo TUS productos
-        const misProductos = respuesta.data.filter((p: any) => p.usuarioEmail === emailUsuario);
+        //const misProductos = respuesta.data.filter((p: any) => p.usuarioEmail === emailUsuario);
         
-        setProductos(misProductos);
+        setProductos(respuesta.data);
       } catch (error) {
         console.error("Error cargando inventario:", error);
       }
