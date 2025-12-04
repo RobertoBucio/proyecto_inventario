@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 // ASEGÚRATE DE QUE LA RUTA SEA CORRECTA (puede ser '../api/axios' o '../api/api')
 import { coreApi } from '../api/axios'; 
 

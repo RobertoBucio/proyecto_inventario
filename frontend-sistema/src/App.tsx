@@ -2,8 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material'; // <--- Importar esto
 import { Login } from './pages/login';
 import { Layout } from './components/layout';
-import { Inventario } from './pages/inventario';
-import { Ventas } from './pages/ventas';
+import Inventario from './pages/inventario';
+import Ventas from './pages/ventas';
 import { Reportes } from './pages/reportes';
 import { Register } from './pages/register';
 
