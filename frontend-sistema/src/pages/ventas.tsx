@@ -18,18 +18,14 @@ const Ventas = () => {
   const [carrito, setCarrito] = useState<ItemCarrito[]>([]);
   const [total, setTotal] = useState<number>(0);
 
-  // 1. CARGAR PRODUCTOS (Con Filtro activado)
+  // 1. CARGAR PRODUCTOS (SIN FILTRO)
   useEffect(() => {
     const cargarProductos = async () => {
       try {
-        // Recuperamos el email para filtrar
-        const emailUsuario = localStorage.getItem('userEmail');
         const respuesta = await coreApi.get('/inventory');
         
-        // FILTRO ACTIVADO: Solo tus productos
-        const misProductos = respuesta.data.filter((p: any) => p.usuarioEmail === emailUsuario);
-        
-        setProductos(misProductos);
+        // MOSTRAR TODO: Sin filtrar por email
+        setProductos(respuesta.data);
       } catch (error) {
         console.error("Error cargando inventario:", error);
       }
@@ -40,7 +36,7 @@ const Ventas = () => {
   // 2. CALCULAR TOTAL (Corrección matemática)
   useEffect(() => {
     const nuevoTotal = carrito.reduce((suma, item) => {
-      // TRUCO: Convertimos precio a Number() por si viene como texto "100"
+      // Convertimos a número para asegurar la suma
       return suma + (Number(item.precio) * item.cantidad);
     }, 0);
     setTotal(nuevoTotal);
@@ -75,19 +71,19 @@ const Ventas = () => {
   const realizarVenta = () => {
     if (carrito.length === 0) return;
     alert(`Venta realizada. Total cobrado: $${total.toFixed(2)}`);
-    setCarrito([]); // Limpiar carrito
+    setCarrito([]); 
     setTotal(0);
   };
 
   return (
     <div style={{ padding: '20px', color: 'white' }}>
-      <h1>Punto de Venta</h1>
+      <h1>Punto de Venta (Global)</h1>
       
       <div style={{ display: 'flex', gap: '20px', marginTop: '20px', flexWrap: 'wrap' }}>
         
         {/* LISTA DE PRODUCTOS */}
         <div style={{ flex: 2, minWidth: '300px' }}>
-          <h2>Mis Productos</h2>
+          <h2>Productos Disponibles</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
             {productos.map((prod) => (
               <div key={prod._id} style={{ border: '1px solid #ccc', padding: '10px', borderRadius: '8px' }}>
@@ -98,19 +94,19 @@ const Ventas = () => {
                   onClick={() => agregarAlCarrito(prod)}
                   style={{ backgroundColor: '#007bff', color: 'white', padding: '5px 10px', border: 'none', cursor: 'pointer', width: '100%' }}
                 >
-                  Agregar al Carrito
+                  Agregar
                 </button>
               </div>
             ))}
           </div>
         </div>
 
-        {/* CARRITO Y TOTAL */}
+        {/* CARRITO */}
         <div style={{ flex: 1, borderLeft: '1px solid #555', paddingLeft: '20px', minWidth: '250px' }}>
-          <h2>Carrito de Compras</h2>
+          <h2>Carrito</h2>
           
           {carrito.length === 0 ? (
-            <p>El carrito está vacío</p>
+            <p>Vacío</p>
           ) : (
             <ul style={{ listStyle: 'none', padding: 0 }}>
               {carrito.map((item) => (
@@ -144,17 +140,16 @@ const Ventas = () => {
                 padding: '10px', 
                 width: '100%', 
                 border: 'none', 
-                fontSize: '18px',
-                cursor: carrito.length === 0 ? 'not-allowed' : 'pointer',
+                fontSize: '18px', 
                 borderRadius: '5px',
-                marginTop: '10px'
+                marginTop: '10px',
+                cursor: carrito.length === 0 ? 'not-allowed' : 'pointer'
               }}
             >
               Cobrar
             </button>
           </div>
         </div>
-
       </div>
     </div>
   );

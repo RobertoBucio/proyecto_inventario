@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { coreApi } from '../api/axios'; 
+import { coreApi } from '../api/axios';
 
 interface Producto {
   _id: string;
@@ -21,17 +21,15 @@ const Inventario = () => {
     categoria: ''
   });
 
-  // CARGAR PRODUCTOS
+  // CARGAR PRODUCTOS (SIN FILTROS)
   const cargarProductos = async () => {
     try {
-      // 1. Recuperamos tu email
-      const emailUsuario = localStorage.getItem('userEmail');
       const respuesta = await coreApi.get('/inventory');
       
-      // 2. FILTRO ACTIVADO: Solo mostramos los que coinciden con tu email
-      const misProductos = respuesta.data.filter((p: any) => p.usuarioEmail === emailUsuario);
+      // CAMBIO CLAVE: Guardamos TODO lo que llega del servidor directamente
+      // No usamos .filter() para que no se oculte nada
+      setProductos(respuesta.data);
       
-      setProductos(misProductos);
     } catch (error) {
       console.error("Error al cargar inventario:", error);
     }
@@ -45,26 +43,27 @@ const Inventario = () => {
   const manejarCrear = async (e: any) => {
     e.preventDefault();
     try {
-      const emailUsuario = localStorage.getItem('userEmail');
+      // Intentamos guardar tu email, pero si falla no importa, el producto se verá igual
+      const emailUsuario = localStorage.getItem('userEmail') || "anonimo@prueba.com";
       
       await coreApi.post('/inventory', {
         nombre: nuevoProducto.nombre,
         precio: Number(nuevoProducto.precio),
         stock: Number(nuevoProducto.stock),
         categoria: nuevoProducto.categoria,
-        usuarioEmail: emailUsuario // Se guarda con TU firma
+        usuarioEmail: emailUsuario 
       });
 
       alert('Producto creado con éxito');
       setNuevoProducto({ nombre: '', precio: '', stock: '', categoria: '' });
-      cargarProductos();
+      cargarProductos(); // Recargar la lista
     } catch (error: any) {
       console.error(error);
       alert('Error al crear producto');
     }
   };
 
-  // ELIMINAR PRODUCTO (Esta es la función que faltaba)
+  // ELIMINAR PRODUCTO
   const eliminarProducto = async (id: string) => {
     if (!window.confirm("¿Seguro que quieres eliminar este producto?")) {
       return;
@@ -72,18 +71,18 @@ const Inventario = () => {
 
     try {
       await coreApi.delete(`/inventory/${id}`);
-      // Actualizamos la lista quitando el producto eliminado
+      // Actualizamos la lista visualmente
       setProductos(productos.filter(p => p._id !== id));
       alert("Producto eliminado correctamente");
     } catch (error) {
       console.error("Error eliminando:", error);
-      alert("No se pudo eliminar. Revisa tu conexión.");
+      alert("No se pudo eliminar el producto");
     }
   };
 
   return (
     <div style={{ padding: '20px', color: 'white', maxWidth: '800px', margin: '0 auto' }}>
-      <h1>Gestión de Inventario</h1>
+      <h1>Gestión de Inventario (Modo Global)</h1>
 
       {/* FORMULARIO */}
       <div style={{ background: '#333', padding: '20px', borderRadius: '10px', marginBottom: '30px' }}>
@@ -126,14 +125,15 @@ const Inventario = () => {
       </div>
 
       {/* TABLA DE PRODUCTOS */}
-      <h3>Mis Productos</h3>
-      {productos.length === 0 ? <p>No hay productos registrados en tu cuenta.</p> : (
+      <h3>Lista Completa de Productos</h3>
+      {productos.length === 0 ? <p>Cargando productos o lista vacía...</p> : (
         <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
           <thead>
             <tr style={{ background: '#444', textAlign: 'left' }}>
               <th style={{ padding: '10px' }}>Nombre</th>
               <th style={{ padding: '10px' }}>Precio</th>
               <th style={{ padding: '10px' }}>Stock</th>
+              <th style={{ padding: '10px' }}>Dueño (Email)</th>
               <th style={{ padding: '10px' }}>Acciones</th>
             </tr>
           </thead>
@@ -143,6 +143,7 @@ const Inventario = () => {
                 <td style={{ padding: '10px' }}>{prod.nombre}</td>
                 <td style={{ padding: '10px' }}>${Number(prod.precio).toFixed(2)}</td>
                 <td style={{ padding: '10px' }}>{prod.stock}</td>
+                <td style={{ padding: '10px', fontSize: '12px', color: '#aaa' }}>{prod.usuarioEmail || 'Sin dueño'}</td>
                 <td style={{ padding: '10px' }}>
                   <button 
                     onClick={() => eliminarProducto(prod._id)}
