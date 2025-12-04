@@ -33,8 +33,8 @@ const Inventario = () => {
       // AGREGA ESTA PARA VER QUÉ LLEGA DEL SERVIDOR
       console.log("Productos del servidor:", respuesta.data);
 
-      const misProductos = respuesta.data.filter((p: any) => p.usuarioEmail === emailUsuario);
-      setProductos(misProductos);
+      //const misProductos = respuesta.data.filter((p: any) => p.usuarioEmail === emailUsuario);
+      setProductos(respuesta.data);
     } catch (error) {
       console.error("Error al cargar inventario:", error);
     }

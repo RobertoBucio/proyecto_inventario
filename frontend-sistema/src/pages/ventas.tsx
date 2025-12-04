@@ -23,7 +23,7 @@ const Ventas = () => {
   useEffect(() => {
     const cargarProductos = async () => {
       try {
-        const emailUsuario = localStorage.getItem('userEmail');
+        //const emailUsuario = localStorage.getItem('userEmail');
         const respuesta = await coreApi.get('/inventory');
         
         // AQUÍ ESTÁ EL TRUCO: Filtramos para ver solo TUS productos
