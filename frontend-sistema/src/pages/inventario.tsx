@@ -26,9 +26,15 @@ const Inventario = () => {
   const cargarProductos = async () => {
     try {
       const emailUsuario = localStorage.getItem('userEmail');
+      
+      // AGREGA ESTA LÍNEA PARA VER SI HAY USUARIO
+      console.log("Mi Usuario es:", emailUsuario); 
+
       const respuesta = await coreApi.get('/inventory');
       
-      // Filtramos para ver solo lo que te pertenece
+      // AGREGA ESTA PARA VER QUÉ LLEGA DEL SERVIDOR
+      console.log("Productos del servidor:", respuesta.data);
+
       const misProductos = respuesta.data.filter((p: any) => p.usuarioEmail === emailUsuario);
       setProductos(misProductos);
     } catch (error) {
