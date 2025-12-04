@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Delete, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Delete, Param, Patch } from '@nestjs/common';
 import { InventoryService } from './inventory.service';
 
 @Controller('inventory')
@@ -15,9 +15,14 @@ export class InventoryController {
     return this.inventoryService.findAll();
   }
 
-  // --- ¡ESTE ES EL PUNTO DE ACCESO PARA BORRAR! ---
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.inventoryService.remove(id);
+  }
+
+  // --- ¡NUEVO ENDPOINT: RECIBIR ACTUALIZACIÓN! ---
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() updateData: any) {
+    return this.inventoryService.update(id, updateData);
   }
 }
