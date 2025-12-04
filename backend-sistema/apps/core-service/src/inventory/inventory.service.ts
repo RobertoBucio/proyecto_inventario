@@ -1,29 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Product, ProductDocument } from './product.schema';
+import { Inventory } from './inventory.schema'; // Asegúrate que la ruta sea correcta
 
 @Injectable()
 export class InventoryService {
-  constructor(
-    @InjectModel(Product.name) private productModel: Model<ProductDocument>,
-  ) {}
+  constructor(@InjectModel(Inventory.name) private inventoryModel: Model<Inventory>) {}
 
-  async crearProducto(datos: any) {
-    const nuevo = new this.productModel(datos); 
-    return nuevo.save();
+  // Crear producto
+  async create(createInventoryDto: any): Promise<Inventory> {
+    const createdInventory = new this.inventoryModel(createInventoryDto);
+    return createdInventory.save();
   }
 
-  async listarProductos(email: string) {
-    return this.productModel.find({ usuarioEmail: email }).exec();
+  // Leer todos los productos
+  async findAll(): Promise<Inventory[]> {
+    return this.inventoryModel.find().exec();
   }
 
-  // Método auxiliar para actualizar stock (lo usaremos en ventas)
-  async actualizarStock(id: string, cantidad: number, session: any) {
-      return this.productModel.findByIdAndUpdate(
-          id, 
-          { $inc: { stock: -cantidad } }, 
-          { session, new: true }
-      );
+  // --- ¡ESTA ES LA FUNCIÓN QUE FALTABA PARA BORRAR! ---
+  async remove(id: string): Promise<any> {
+    return this.inventoryModel.findByIdAndDelete(id).exec();
   }
 }
