@@ -1,15 +1,16 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
+import { MongooseModule } from '@nestjs/mongoose'; // <--- OBLIGATORIO
 import { InventoryService } from './inventory.service';
 import { InventoryController } from './inventory.controller';
-import { Product, ProductSchema } from './product.schema';
+// Ajusta esta ruta según donde tengas tu esquema (Caso A o Caso B del paso 1)
+import { Inventory, InventorySchema } from './inventory.schema'; 
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Product.name, schema: ProductSchema }]),
+    // ESTA ES LA LÍNEA QUE SALVA AL SERVIDOR DE MORIR:
+    MongooseModule.forFeature([{ name: Inventory.name, schema: InventorySchema }]),
   ],
   controllers: [InventoryController],
   providers: [InventoryService],
-  exports: [InventoryService, MongooseModule], // Exportamos para que Ventas pueda usarlo
 })
 export class InventoryModule {}
