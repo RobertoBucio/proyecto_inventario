@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-// ASEGÚRATE DE QUE LA RUTA SEA CORRECTA (puede ser '../api/axios' o '../api/api')
 import { coreApi } from '../api/axios'; 
 
 interface Producto {
-  _id: string; // O 'id' dependiendo de tu base de datos
+  _id: string;
   nombre: string;
   precio: number;
   stock: number;
@@ -19,17 +18,18 @@ const Ventas = () => {
   const [carrito, setCarrito] = useState<ItemCarrito[]>([]);
   const [total, setTotal] = useState<number>(0);
 
-  // 1. CARGAR PRODUCTOS (CORREGIDO: FILTRA POR USUARIO)
+  // 1. CARGAR PRODUCTOS (Con Filtro activado)
   useEffect(() => {
     const cargarProductos = async () => {
       try {
-        //const emailUsuario = localStorage.getItem('userEmail');
+        // Recuperamos el email para filtrar
+        const emailUsuario = localStorage.getItem('userEmail');
         const respuesta = await coreApi.get('/inventory');
         
-        // AQUÍ ESTÁ EL TRUCO: Filtramos para ver solo TUS productos
-        //const misProductos = respuesta.data.filter((p: any) => p.usuarioEmail === emailUsuario);
+        // FILTRO ACTIVADO: Solo tus productos
+        const misProductos = respuesta.data.filter((p: any) => p.usuarioEmail === emailUsuario);
         
-        setProductos(respuesta.data);
+        setProductos(misProductos);
       } catch (error) {
         console.error("Error cargando inventario:", error);
       }
@@ -37,22 +37,19 @@ const Ventas = () => {
     cargarProductos();
   }, []);
 
-  // 2. CALCULAR TOTAL (CORREGIDO: ASEGURA QUE SEAN NÚMEROS)
+  // 2. CALCULAR TOTAL (Corrección matemática)
   useEffect(() => {
     const nuevoTotal = carrito.reduce((suma, item) => {
-      // Usamos Number() por seguridad, por si el precio viene como texto "100"
+      // TRUCO: Convertimos precio a Number() por si viene como texto "100"
       return suma + (Number(item.precio) * item.cantidad);
     }, 0);
     setTotal(nuevoTotal);
   }, [carrito]);
 
-  // Función para agregar al carrito
   const agregarAlCarrito = (producto: Producto) => {
-    // Verificamos si ya está en el carrito
     const itemExistente = carrito.find(item => item._id === producto._id);
 
     if (itemExistente) {
-      // Si ya está, aumentamos cantidad (si hay stock)
       if (itemExistente.cantidad < producto.stock) {
         setCarrito(carrito.map(item => 
           item._id === producto._id 
@@ -63,7 +60,6 @@ const Ventas = () => {
         alert("No hay más stock disponible");
       }
     } else {
-      // Si no está, lo agregamos con cantidad 1
       if (producto.stock > 0) {
         setCarrito([...carrito, { ...producto, cantidad: 1 }]);
       } else {
@@ -72,18 +68,14 @@ const Ventas = () => {
     }
   };
 
-  // Función para quitar del carrito
   const eliminarDelCarrito = (id: string) => {
     setCarrito(carrito.filter(item => item._id !== id));
   };
 
-  // Función para confirmar la venta (Solo visual por ahora)
   const realizarVenta = () => {
     if (carrito.length === 0) return;
-    
-    alert(`Venta realizada con éxito. Total a cobrar: $${total}`);
-    // Aquí iría la lógica para enviar la venta al backend y descontar stock
-    setCarrito([]);
+    alert(`Venta realizada. Total cobrado: $${total.toFixed(2)}`);
+    setCarrito([]); // Limpiar carrito
     setTotal(0);
   };
 
@@ -91,10 +83,10 @@ const Ventas = () => {
     <div style={{ padding: '20px', color: 'white' }}>
       <h1>Punto de Venta</h1>
       
-      <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
+      <div style={{ display: 'flex', gap: '20px', marginTop: '20px', flexWrap: 'wrap' }}>
         
-        {/* COLUMNA IZQUIERDA: LISTA DE PRODUCTOS */}
-        <div style={{ flex: 2 }}>
+        {/* LISTA DE PRODUCTOS */}
+        <div style={{ flex: 2, minWidth: '300px' }}>
           <h2>Mis Productos</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
             {productos.map((prod) => (
@@ -106,15 +98,15 @@ const Ventas = () => {
                   onClick={() => agregarAlCarrito(prod)}
                   style={{ backgroundColor: '#007bff', color: 'white', padding: '5px 10px', border: 'none', cursor: 'pointer', width: '100%' }}
                 >
-                  Agregar
+                  Agregar al Carrito
                 </button>
               </div>
             ))}
           </div>
         </div>
 
-        {/* COLUMNA DERECHA: CARRITO Y TOTAL */}
-        <div style={{ flex: 1, borderLeft: '1px solid #555', paddingLeft: '20px' }}>
+        {/* CARRITO Y TOTAL */}
+        <div style={{ flex: 1, borderLeft: '1px solid #555', paddingLeft: '20px', minWidth: '250px' }}>
           <h2>Carrito de Compras</h2>
           
           {carrito.length === 0 ? (
@@ -131,7 +123,7 @@ const Ventas = () => {
                     <span style={{ marginRight: '10px' }}>${(item.cantidad * Number(item.precio))}</span>
                     <button 
                       onClick={() => eliminarDelCarrito(item._id)}
-                      style={{ background: 'red', color: 'white', border: 'none', cursor: 'pointer' }}
+                      style={{ background: 'red', color: 'white', border: 'none', cursor: 'pointer', padding: '2px 8px', borderRadius: '4px' }}
                     >
                       X
                     </button>
@@ -142,7 +134,7 @@ const Ventas = () => {
           )}
 
           <div style={{ marginTop: '20px', borderTop: '2px solid white', paddingTop: '10px' }}>
-            <h2>Total: ${total.toFixed(2)}</h2>
+            <h2>Total a Pagar: ${total.toFixed(2)}</h2>
             <button 
               onClick={realizarVenta}
               disabled={carrito.length === 0}
@@ -153,7 +145,9 @@ const Ventas = () => {
                 width: '100%', 
                 border: 'none', 
                 fontSize: '18px',
-                cursor: carrito.length === 0 ? 'not-allowed' : 'pointer'
+                cursor: carrito.length === 0 ? 'not-allowed' : 'pointer',
+                borderRadius: '5px',
+                marginTop: '10px'
               }}
             >
               Cobrar
