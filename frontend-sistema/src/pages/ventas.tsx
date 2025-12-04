@@ -1,172 +1,169 @@
-import { useEffect, useState } from 'react';
-import { Button, Container, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography, MenuItem, Select, FormControl, InputLabel, Alert } from '@mui/material';
-import { AddShoppingCart, Receipt } from '@mui/icons-material';
-import { coreApi } from '../api/axios';
+import React, { useState, useEffect } from 'react';
+// ASEGÚRATE DE QUE LA RUTA SEA CORRECTA (puede ser '../api/axios' o '../api/api')
+import { coreApi } from '../api/axios'; 
 
-export const Ventas = () => {
-  const [productos, setProductos] = useState<any[]>([]);
-  const [carrito, setCarrito] = useState<any[]>([]);
-  const [productoSelec, setProductoSelec] = useState('');
-  const [cantidad, setCantidad] = useState(1);
-  const [cliente, setCliente] = useState('Cliente General');
-  const [mensaje, setMensaje] = useState({ tipo: '', texto: '' });
+interface Producto {
+  _id: string; // O 'id' dependiendo de tu base de datos
+  nombre: string;
+  precio: number;
+  stock: number;
+  usuarioEmail: string;
+}
 
-  // Cargar productos para el "Select"
+interface ItemCarrito extends Producto {
+  cantidad: number;
+}
+
+const Ventas = () => {
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [carrito, setCarrito] = useState<ItemCarrito[]>([]);
+  const [total, setTotal] = useState<number>(0);
+
+  // 1. CARGAR PRODUCTOS (CORREGIDO: FILTRA POR USUARIO)
   useEffect(() => {
-    coreApi.get('/inventory').then(res => setProductos(res.data));
+    const cargarProductos = async () => {
+      try {
+        const emailUsuario = localStorage.getItem('userEmail');
+        const respuesta = await coreApi.get('/inventory');
+        
+        // AQUÍ ESTÁ EL TRUCO: Filtramos para ver solo TUS productos
+        const misProductos = respuesta.data.filter((p: any) => p.usuarioEmail === emailUsuario);
+        
+        setProductos(misProductos);
+      } catch (error) {
+        console.error("Error cargando inventario:", error);
+      }
+    };
+    cargarProductos();
   }, []);
 
-  // Agregar al carrito (Visualmente)
-  const agregarAlCarrito = () => {
-    const prod = productos.find(p => p._id === productoSelec);
-    if (!prod) return;
+  // 2. CALCULAR TOTAL (CORREGIDO: ASEGURA QUE SEAN NÚMEROS)
+  useEffect(() => {
+    const nuevoTotal = carrito.reduce((suma, item) => {
+      // Usamos Number() por seguridad, por si el precio viene como texto "100"
+      return suma + (Number(item.precio) * item.cantidad);
+    }, 0);
+    setTotal(nuevoTotal);
+  }, [carrito]);
 
-    if (prod.stock < cantidad) {
-      setMensaje({ tipo: 'error', texto: `Solo hay ${prod.stock} unidades de ${prod.nombre}` });
-      return;
-    }
+  // Función para agregar al carrito
+  const agregarAlCarrito = (producto: Producto) => {
+    // Verificamos si ya está en el carrito
+    const itemExistente = carrito.find(item => item._id === producto._id);
 
-    const item = {
-      _id: prod._id,
-      nombre: prod.nombre,
-      precio: prod.precio,
-      cantidad: Number(cantidad),
-      subtotal: prod.precio * Number(cantidad)
-    };
-
-    setCarrito([...carrito, item]);
-    setMensaje({ tipo: '', texto: '' });
-  };
-
-  // Finalizar Venta (Enviar al Backend)
-  const finalizarVenta = async () => {
-    try {
-      // Preparamos los datos como los pide el Backend NestJS
-      const ventaData = {
-        cliente: cliente,
-        items: carrito.map(item => ({
-          productId: item._id,
-          cantidad: item.cantidad
-        }))
-      };
-
-      await coreApi.post('/sales', ventaData);
-      
-      setMensaje({ tipo: 'success', texto: '¡Venta realizada con éxito! El inventario se ha actualizado.' });
-      setCarrito([]); // Limpiar carrito
-      
-      // Recargar productos para ver el stock actualizado
-      coreApi.get('/inventory').then(res => setProductos(res.data));
-      
-    } catch (error) {
-      setMensaje({ tipo: 'error', texto: 'Error al procesar la venta. Verifique el stock.' });
+    if (itemExistente) {
+      // Si ya está, aumentamos cantidad (si hay stock)
+      if (itemExistente.cantidad < producto.stock) {
+        setCarrito(carrito.map(item => 
+          item._id === producto._id 
+            ? { ...item, cantidad: item.cantidad + 1 } 
+            : item
+        ));
+      } else {
+        alert("No hay más stock disponible");
+      }
+    } else {
+      // Si no está, lo agregamos con cantidad 1
+      if (producto.stock > 0) {
+        setCarrito([...carrito, { ...producto, cantidad: 1 }]);
+      } else {
+        alert("Producto agotado");
+      }
     }
   };
 
-  const totalVenta = carrito.reduce((acc, item) => acc + item.subtotal, 0);
+  // Función para quitar del carrito
+  const eliminarDelCarrito = (id: string) => {
+    setCarrito(carrito.filter(item => item._id !== id));
+  };
+
+  // Función para confirmar la venta (Solo visual por ahora)
+  const realizarVenta = () => {
+    if (carrito.length === 0) return;
+    
+    alert(`Venta realizada con éxito. Total a cobrar: $${total}`);
+    // Aquí iría la lógica para enviar la venta al backend y descontar stock
+    setCarrito([]);
+    setTotal(0);
+  };
 
   return (
-    <Container>
-      <Typography variant="h4" gutterBottom>Punto de Venta</Typography>
+    <div style={{ padding: '20px', color: 'white' }}>
+      <h1>Punto de Venta</h1>
+      
+      <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
+        
+        {/* COLUMNA IZQUIERDA: LISTA DE PRODUCTOS */}
+        <div style={{ flex: 2 }}>
+          <h2>Mis Productos</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
+            {productos.map((prod) => (
+              <div key={prod._id} style={{ border: '1px solid #ccc', padding: '10px', borderRadius: '8px' }}>
+                <h3>{prod.nombre}</h3>
+                <p>Precio: ${Number(prod.precio).toFixed(2)}</p>
+                <p>Stock: {prod.stock}</p>
+                <button 
+                  onClick={() => agregarAlCarrito(prod)}
+                  style={{ backgroundColor: '#007bff', color: 'white', padding: '5px 10px', border: 'none', cursor: 'pointer', width: '100%' }}
+                >
+                  Agregar
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
 
-      {mensaje.texto && <Alert severity={mensaje.tipo as any} sx={{ mb: 2 }}>{mensaje.texto}</Alert>}
+        {/* COLUMNA DERECHA: CARRITO Y TOTAL */}
+        <div style={{ flex: 1, borderLeft: '1px solid #555', paddingLeft: '20px' }}>
+          <h2>Carrito de Compras</h2>
+          
+          {carrito.length === 0 ? (
+            <p>El carrito está vacío</p>
+          ) : (
+            <ul style={{ listStyle: 'none', padding: 0 }}>
+              {carrito.map((item) => (
+                <li key={item._id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', borderBottom: '1px solid #444', paddingBottom: '5px' }}>
+                  <div>
+                    <strong>{item.nombre}</strong> <br/>
+                    {item.cantidad} x ${Number(item.precio)}
+                  </div>
+                  <div>
+                    <span style={{ marginRight: '10px' }}>${(item.cantidad * Number(item.precio))}</span>
+                    <button 
+                      onClick={() => eliminarDelCarrito(item._id)}
+                      style={{ background: 'red', color: 'white', border: 'none', cursor: 'pointer' }}
+                    >
+                      X
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
 
-      <Grid container spacing={3}>
-        {/* Panel Izquierdo: Agregar Productos */}
-        <Grid size={{ xs: 12, md: 5 }}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>Agregar Producto</Typography>
-            
-            <TextField 
-              label="Nombre del Cliente" 
-              fullWidth 
-              value={cliente} 
-              onChange={(e) => setCliente(e.target.value)} 
-              sx={{ mb: 2 }}
-            />
-
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Seleccionar Producto</InputLabel>
-              <Select
-                value={productoSelec}
-                label="Seleccionar Producto"
-                onChange={(e) => setProductoSelec(e.target.value)}
-              >
-                {productos.map((p) => (
-                  <MenuItem key={p._id} value={p._id}>
-                    {p.nombre} - ${p.precio} (Stock: {p.stock})
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            <TextField 
-              label="Cantidad" 
-              type="number" 
-              fullWidth 
-              value={cantidad} 
-              onChange={(e) => setCantidad(Number(e.target.value))} 
-              sx={{ mb: 3 }}
-            />
-
-            <Button 
-              variant="contained" 
-              startIcon={<AddShoppingCart />} 
-              fullWidth 
-              onClick={agregarAlCarrito}
-              disabled={!productoSelec}
-            >
-              Agregar al Carrito
-            </Button>
-          </Paper>
-        </Grid>
-
-        {/* Panel Derecho: El Carrito y Total */}
-        <Grid size={{ xs: 12, md: 7 }}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>Ticket de Venta</Typography>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Producto</TableCell>
-                    <TableCell align="right">Cant.</TableCell>
-                    <TableCell align="right">Subtotal</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {carrito.map((row, index) => (
-                    <TableRow key={index}>
-                      <TableCell>{row.nombre}</TableCell>
-                      <TableCell align="right">{row.cantidad}</TableCell>
-                      <TableCell align="right">${row.subtotal}</TableCell>
-                    </TableRow>
-                  ))}
-                  <TableRow>
-                    <TableCell colSpan={2} sx={{ fontWeight: 'bold' }}>TOTAL A PAGAR</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 'bold', fontSize: '1.2rem' }}>
-                      ${totalVenta}
-                    </TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </TableContainer>
-
-            <Button 
-              variant="contained" 
-              color="success" 
-              size="large" 
-              fullWidth 
-              startIcon={<Receipt />} 
-              sx={{ mt: 3 }}
-              onClick={finalizarVenta}
+          <div style={{ marginTop: '20px', borderTop: '2px solid white', paddingTop: '10px' }}>
+            <h2>Total: ${total.toFixed(2)}</h2>
+            <button 
+              onClick={realizarVenta}
               disabled={carrito.length === 0}
+              style={{ 
+                backgroundColor: carrito.length === 0 ? 'gray' : 'green', 
+                color: 'white', 
+                padding: '10px', 
+                width: '100%', 
+                border: 'none', 
+                fontSize: '18px',
+                cursor: carrito.length === 0 ? 'not-allowed' : 'pointer'
+              }}
             >
-              Finalizar Venta
-            </Button>
-          </Paper>
-        </Grid>
-      </Grid>
-    </Container>
+              Cobrar
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
   );
 };
+
+export default Ventas;

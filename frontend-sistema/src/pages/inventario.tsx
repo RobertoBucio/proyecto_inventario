@@ -1,100 +1,167 @@
-import { useEffect, useState } from 'react';
-import { Button, Container, Grid, Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TextField, Typography } from '@mui/material';
-import { coreApi } from '../api/axios';
+import React, { useState, useEffect } from 'react';
+// Asegúrate de importar tu cliente de axios correctamente
+import { coreApi } from '../api/axios'; 
 
-export const Inventario = () => {
-  const [productos, setProductos] = useState([]);
-  const [nuevoProducto, setNuevoProducto] = useState({ nombre: '', precio: 0, stock: 0, categoria: '' });
+interface Producto {
+  _id: string;
+  nombre: string;
+  precio: number;
+  stock: number;
+  categoria: string;
+  usuarioEmail: string;
+}
 
-  // Cargar productos al iniciar
+const Inventario = () => {
+  const [productos, setProductos] = useState<Producto[]>([]);
+  
+  // Estado para el formulario de crear
+  const [nuevoProducto, setNuevoProducto] = useState({
+    nombre: '',
+    precio: '',
+    stock: '',
+    categoria: ''
+  });
+
+  // 1. CARGAR PRODUCTOS (Solo los tuyos)
+  const cargarProductos = async () => {
+    try {
+      const emailUsuario = localStorage.getItem('userEmail');
+      const respuesta = await coreApi.get('/inventory');
+      
+      // Filtramos para ver solo lo que te pertenece
+      const misProductos = respuesta.data.filter((p: any) => p.usuarioEmail === emailUsuario);
+      setProductos(misProductos);
+    } catch (error) {
+      console.error("Error al cargar inventario:", error);
+    }
+  };
+
+  // Cargar al iniciar la página
   useEffect(() => {
     cargarProductos();
   }, []);
 
-  const cargarProductos = async () => {
+  // 2. CREAR PRODUCTO NUEVO
+  const manejarCrear = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      const email = localStorage.getItem('userEmail');
-      // Enviamos el email como parámetro en la URL
-      const res = await coreApi.get(`/inventory?email=${email}`);
-      setProductos(res.data);
-    } catch (error) {
-      console.error("Error cargando inventario", error);
+      const emailUsuario = localStorage.getItem('userEmail');
+      
+      await coreApi.post('/inventory', {
+        nombre: nuevoProducto.nombre,
+        precio: Number(nuevoProducto.precio),
+        stock: Number(nuevoProducto.stock),
+        categoria: nuevoProducto.categoria,
+        usuarioEmail: emailUsuario // Importante para que sea tuyo
+      });
+
+      alert('Producto creado con éxito');
+      setNuevoProducto({ nombre: '', precio: '', stock: '', categoria: '' }); // Limpiar form
+      cargarProductos(); // Recargar la lista
+    } catch (error: any) {
+      console.error(error);
+      alert('Error al crear producto');
     }
   };
 
-  const crearProducto = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // 3. ELIMINAR PRODUCTO (¡NUEVA FUNCIÓN!)
+  const eliminarProducto = async (id: string) => {
+    // Preguntar antes de borrar para evitar accidentes
+    if (!window.confirm("¿Seguro que quieres eliminar este producto?")) {
+      return;
+    }
+
     try {
-      // 1. Recuperamos el email del dueño
-      const emailDueño = localStorage.getItem('userEmail');
-
-      // 2. Se lo agregamos a los datos del producto
-      await coreApi.post('/inventory', { 
-        ...nuevoProducto, 
-        precio: Number(nuevoProducto.precio), // <--- ESTO ES CLAVE
-        stock: Number(nuevoProducto.stock),   // <--- ESTO TAMBIÉN
-        usuarioEmail: emailDueño 
-      });
-
-      setNuevoProducto({ nombre: '', precio: 0, stock: 0, categoria: '' });
-      cargarProductos();
-      alert('Producto creado correctamente');
+      // Petición DELETE al servidor
+      await coreApi.delete(`/inventory/${id}`);
+      
+      // Actualizar la lista visualmente sin recargar la página
+      setProductos(productos.filter(p => p._id !== id));
+      alert("Producto eliminado correctamente");
     } catch (error) {
-      console.error(error); // Para ver el error en consola si falla
-      alert('Error al crear producto. Verifica que no falten datos.');
+      console.error("Error eliminando:", error);
+      alert("No se pudo eliminar el producto");
     }
   };
 
   return (
-    <Container>
-      <Typography variant="h4" gutterBottom>Gestión de Inventario</Typography>
+    <div style={{ padding: '20px', color: 'white', maxWidth: '800px', margin: '0 auto' }}>
+      <h1>Gestión de Inventario</h1>
 
-      {/* Formulario de Creación */}
-      <Paper sx={{ p: 2, mb: 4 }}>
-        <Typography variant="h6">Agregar Nuevo Producto</Typography>
-        <form onSubmit={crearProducto}>
-          <Grid container spacing={2}>
-            <Grid size={3}>
-              <TextField label="Nombre" fullWidth value={nuevoProducto.nombre} onChange={(e) => setNuevoProducto({...nuevoProducto, nombre: e.target.value})} />
-            </Grid>
-            <Grid size={3}>
-              <TextField label="Precio" type="number" fullWidth value={nuevoProducto.precio} onChange={(e) => setNuevoProducto({...nuevoProducto, precio: Number(e.target.value)})} />
-            </Grid>
-            <Grid size={3}>
-              <TextField label="Stock Inicial" type="number" fullWidth value={nuevoProducto.stock} onChange={(e) => setNuevoProducto({...nuevoProducto, stock: Number(e.target.value)})} />
-            </Grid>
-            <Grid size={3}>
-              <Button type="submit" variant="contained" fullWidth sx={{ height: '100%' }}>Guardar</Button>
-            </Grid>
-          </Grid>
+      {/* FORMULARIO DE CREACIÓN */}
+      <div style={{ background: '#333', padding: '20px', borderRadius: '10px', marginBottom: '30px' }}>
+        <h3>Agregar Nuevo Producto</h3>
+        <form onSubmit={manejarCrear} style={{ display: 'grid', gap: '10px' }}>
+          <input 
+            placeholder="Nombre del producto" 
+            value={nuevoProducto.nombre}
+            onChange={(e) => setNuevoProducto({...nuevoProducto, nombre: e.target.value})}
+            required
+            style={{ padding: '8px' }}
+          />
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <input 
+              type="number" placeholder="Precio" 
+              value={nuevoProducto.precio}
+              onChange={(e) => setNuevoProducto({...nuevoProducto, precio: e.target.value})}
+              required
+              style={{ padding: '8px', flex: 1 }}
+            />
+            <input 
+              type="number" placeholder="Stock" 
+              value={nuevoProducto.stock}
+              onChange={(e) => setNuevoProducto({...nuevoProducto, stock: e.target.value})}
+              required
+              style={{ padding: '8px', flex: 1 }}
+            />
+          </div>
+          <input 
+            placeholder="Categoría" 
+            value={nuevoProducto.categoria}
+            onChange={(e) => setNuevoProducto({...nuevoProducto, categoria: e.target.value})}
+            required
+            style={{ padding: '8px' }}
+          />
+          <button type="submit" style={{ background: 'green', color: 'white', padding: '10px', border: 'none', cursor: 'pointer' }}>
+            Guardar Producto
+          </button>
         </form>
-      </Paper>
+      </div>
 
-      {/* Tabla de Productos */}
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow sx={{ backgroundColor: '#f5f5f5' }}>
-              <TableCell>Nombre</TableCell>
-              <TableCell>Categoría</TableCell>
-              <TableCell align="right">Precio</TableCell>
-              <TableCell align="right">Stock</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {productos.map((prod: any) => (
-              <TableRow key={prod._id}>
-                <TableCell>{prod.nombre}</TableCell>
-                <TableCell>{prod.categoria || 'General'}</TableCell>
-                <TableCell align="right">${prod.precio}</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 'bold', color: prod.stock < 5 ? 'red' : 'green' }}>
-                    {prod.stock}
-                </TableCell>
-              </TableRow>
+      {/* LISTA DE PRODUCTOS CON BOTÓN ELIMINAR */}
+      <h3>Mis Productos Actuales</h3>
+      {productos.length === 0 ? <p>No tienes productos registrados.</p> : (
+        <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+          <thead>
+            <tr style={{ background: '#444', textAlign: 'left' }}>
+              <th style={{ padding: '10px' }}>Nombre</th>
+              <th style={{ padding: '10px' }}>Precio</th>
+              <th style={{ padding: '10px' }}>Stock</th>
+              <th style={{ padding: '10px' }}>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {productos.map((prod) => (
+              <tr key={prod._id} style={{ borderBottom: '1px solid #555' }}>
+                <td style={{ padding: '10px' }}>{prod.nombre}</td>
+                <td style={{ padding: '10px' }}>${Number(prod.precio).toFixed(2)}</td>
+                <td style={{ padding: '10px' }}>{prod.stock}</td>
+                <td style={{ padding: '10px' }}>
+                  {/* BOTÓN ELIMINAR */}
+                  <button 
+                    onClick={() => eliminarProducto(prod._id)}
+                    style={{ background: 'red', color: 'white', border: 'none', padding: '5px 10px', cursor: 'pointer', borderRadius: '4px' }}
+                  >
+                    Eliminar
+                  </button>
+                </td>
+              </tr>
             ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Container>
+          </tbody>
+        </table>
+      )}
+    </div>
   );
 };
+
+export default Inventario;
