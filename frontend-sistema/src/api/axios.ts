@@ -7,7 +7,7 @@ export const authApi = axios.create({
 
 // Cliente para CORE (Usa la URL de tu segundo servicio de Render)
 export const coreApi = axios.create({
-    baseURL: 'https://sistema-core.onrender.com',
+    baseURL: 'https://sistema-core-5diz.onrender.com',
 });
 
 // Interceptor: Antes de cada petición al CORE, inyectar el Token si existe
