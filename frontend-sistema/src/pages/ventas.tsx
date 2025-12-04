@@ -18,7 +18,7 @@ const Ventas = () => {
   const [carrito, setCarrito] = useState<ItemCarrito[]>([]);
   const [total, setTotal] = useState<number>(0);
 
-  // 1. CARGAR PRODUCTOS
+  // 1. CARGAR PRODUCTOS (Esta función la usaremos para refrescar la pantalla)
   const cargarProductos = async () => {
     try {
       const respuesta = await coreApi.get('/inventory');
@@ -32,20 +32,19 @@ const Ventas = () => {
     cargarProductos();
   }, []);
 
-  // 2. CALCULAR TOTAL
+  // 2. CALCULAR TOTAL (CORRECCIÓN IMPORTANTE)
   useEffect(() => {
+    // Usamos Number() en TODAS partes para asegurar que no sea texto
     const nuevoTotal = carrito.reduce((suma, item) => {
-      return suma + (Number(item.precio) * item.cantidad);
+      return suma + (Number(item.precio) * Number(item.cantidad));
     }, 0);
     setTotal(nuevoTotal);
   }, [carrito]);
 
-  // AGREGAR (O INCREMENTAR)
   const agregarAlCarrito = (producto: Producto) => {
     const itemExistente = carrito.find(item => item._id === producto._id);
 
     if (itemExistente) {
-      // Si ya existe, verificamos stock antes de sumar
       if (itemExistente.cantidad < producto.stock) {
         setCarrito(carrito.map(item => 
           item._id === producto._id 
@@ -64,7 +63,6 @@ const Ventas = () => {
     }
   };
 
-  // DISMINUIR CANTIDAD
   const disminuirCantidad = (id: string) => {
     const item = carrito.find(i => i._id === id);
     if (item && item.cantidad > 1) {
@@ -72,34 +70,33 @@ const Ventas = () => {
         i._id === id ? { ...i, cantidad: i.cantidad - 1 } : i
       ));
     } else {
-      // Si llega a 0, lo sacamos del carrito
       eliminarDelCarrito(id);
     }
   };
 
-  // ELIMINAR DEL CARRITO
   const eliminarDelCarrito = (id: string) => {
     setCarrito(carrito.filter(item => item._id !== id));
   };
 
-  // --- ¡NUEVA FUNCIÓN DE VENTA CON RESTA DE STOCK! ---
+  // --- FUNCIÓN DE VENTA QUE ACTUALIZA EL STOCK VISUALMENTE ---
   const realizarVenta = async () => {
     if (carrito.length === 0) return;
 
     try {
-      // Recorremos el carrito y actualizamos cada producto en la base de datos
+      // 1. Enviamos las actualizaciones al servidor una por una
       for (const item of carrito) {
         const nuevoStock = item.stock - item.cantidad;
-        
-        // Enviamos la orden al servidor: "Actualiza el stock de este ID"
         await coreApi.patch(`/inventory/${item._id}`, { stock: nuevoStock });
       }
 
       alert(`¡Venta exitosa! Total cobrado: $${total.toFixed(2)}`);
       
-      setCarrito([]); // Limpiar carrito
+      // 2. Limpiamos el carrito
+      setCarrito([]); 
       setTotal(0);
-      cargarProductos(); // RECARGAR la lista para ver el stock actualizado
+
+      // 3. ¡ESTE ES EL TRUCO! Recargamos los productos para ver el stock actualizado
+      await cargarProductos(); 
       
     } catch (error) {
       console.error("Error al procesar la venta:", error);
@@ -113,15 +110,18 @@ const Ventas = () => {
       
       <div style={{ display: 'flex', gap: '20px', marginTop: '20px', flexWrap: 'wrap' }}>
         
-        {/* COLUMNA IZQUIERDA: PRODUCTOS DISPONIBLES */}
+        {/* LISTA DE PRODUCTOS (Izquierda) */}
         <div style={{ flex: 2, minWidth: '300px' }}>
-          <h2>Inventario</h2>
+          <h2>Inventario Disponible</h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
             {productos.map((prod) => (
               <div key={prod._id} style={{ border: '1px solid #ccc', padding: '10px', borderRadius: '8px', background: '#222' }}>
                 <h3>{prod.nombre}</h3>
                 <p>Precio: ${Number(prod.precio).toFixed(2)}</p>
-                <p style={{ color: prod.stock === 0 ? 'red' : '#0f0' }}>Stock: {prod.stock}</p>
+                {/* Aquí mostramos el stock en tiempo real */}
+                <p style={{ color: prod.stock === 0 ? 'red' : '#0f0', fontWeight: 'bold' }}>
+                  Stock Actual: {prod.stock}
+                </p>
                 <button 
                   onClick={() => agregarAlCarrito(prod)}
                   disabled={prod.stock === 0}
@@ -130,50 +130,44 @@ const Ventas = () => {
                     color: 'white', padding: '5px 10px', border: 'none', cursor: 'pointer', width: '100%', borderRadius: '4px' 
                   }}
                 >
-                  {prod.stock === 0 ? 'Agotado' : 'Agregar'}
+                  {prod.stock === 0 ? 'Agotado' : 'Agregar +'}
                 </button>
               </div>
             ))}
           </div>
         </div>
 
-        {/* COLUMNA DERECHA: CARRITO */}
+        {/* CARRITO (Derecha) */}
         <div style={{ flex: 1, borderLeft: '1px solid #555', paddingLeft: '20px', minWidth: '250px' }}>
           <h2>Carrito</h2>
           
-          {carrito.length === 0 ? <p>Vacío</p> : (
+          {carrito.length === 0 ? <p>El carrito está vacío</p> : (
             <ul style={{ listStyle: 'none', padding: 0 }}>
               {carrito.map((item) => (
                 <li key={item._id} style={{ marginBottom: '15px', borderBottom: '1px solid #444', paddingBottom: '10px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
                     <strong>{item.nombre}</strong>
-                    <span>${(item.cantidad * Number(item.precio)).toFixed(2)}</span>
+                    {/* Aseguramos que el subtotal se calcule bien */}
+                    <span>${(Number(item.cantidad) * Number(item.precio)).toFixed(2)}</span>
                   </div>
                   
-                  {/* CONTROLES DE CANTIDAD */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <button 
                       onClick={() => disminuirCantidad(item._id)}
                       style={{ background: '#555', color: 'white', border: 'none', width: '30px', height: '30px', borderRadius: '50%', cursor: 'pointer' }}
-                    >
-                      -
-                    </button>
+                    > - </button>
                     
                     <span style={{ fontSize: '18px', fontWeight: 'bold' }}>{item.cantidad}</span>
                     
                     <button 
                       onClick={() => agregarAlCarrito(item)}
                       style={{ background: '#555', color: 'white', border: 'none', width: '30px', height: '30px', borderRadius: '50%', cursor: 'pointer' }}
-                    >
-                      +
-                    </button>
+                    > + </button>
 
                     <button 
                       onClick={() => eliminarDelCarrito(item._id)}
                       style={{ background: 'red', color: 'white', border: 'none', marginLeft: 'auto', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer' }}
-                    >
-                      Eliminar
-                    </button>
+                    > Eliminar </button>
                   </div>
                 </li>
               ))}
@@ -181,7 +175,9 @@ const Ventas = () => {
           )}
 
           <div style={{ marginTop: '20px', borderTop: '2px solid white', paddingTop: '10px' }}>
-            <h2>Total: ${total.toFixed(2)}</h2>
+            {/* AQUÍ SE MUESTRA EL TOTAL */}
+            <h2>Total a Pagar: ${Number(total).toFixed(2)}</h2>
+            
             <button 
               onClick={realizarVenta}
               disabled={carrito.length === 0}
