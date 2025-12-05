@@ -34,13 +34,17 @@ const Ventas = () => {
 
   // 2. CALCULAR TOTAL (CORRECCIÓN IMPORTANTE)
   useEffect(() => {
-    // Usamos Number() en TODAS partes para asegurar que no sea texto
     const nuevoTotal = carrito.reduce((suma, item) => {
-      return suma + (Number(item.precio) * Number(item.cantidad));
+      // Convertimos todo a número por seguridad
+      const precio = Number(item.precio) || 0; 
+      const cantidad = Number(item.cantidad) || 0;
+      
+      return suma + (precio * cantidad);
     }, 0);
-    setTotal(nuevoTotal);
-  }, [carrito]);
 
+    console.log("Nuevo total calculado:", nuevoTotal); // <--- Mira esto en la consola F12
+    setTotal(nuevoTotal);
+  }, [carrito]); // Se recalcula cada vez que cambia el carrito
   const agregarAlCarrito = (producto: Producto) => {
     const itemExistente = carrito.find(item => item._id === producto._id);
 
@@ -103,6 +107,7 @@ const Ventas = () => {
       alert("Hubo un error al descontar el stock. Verifica tu conexión.");
     }
   };
+  
 
   return (
     <div style={{ padding: '20px', color: 'white' }}>
